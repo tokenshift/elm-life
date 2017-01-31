@@ -48,8 +48,7 @@ updateReady msg model =
 view : Model -> Html Msg
 view model =
     div [ class "app" ]
-        [ h1 [] [ text "Game of Life" ]
-        , case model of
+        [ case model of
               Setup state ->
                   Html.map (\msg -> SetupMsg msg) <| Settings.view state
               Ready state ->

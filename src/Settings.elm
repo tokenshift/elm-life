@@ -9,7 +9,7 @@ import Utils exposing (..)
 type alias State = { rows : Int, cols : Int }
 
 init : State
-init = { rows = 16, cols = 16 }
+init = { rows = 55, cols = 55 }
 
 type Msg
     = UpdateRows String

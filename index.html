@@ -5,10 +5,18 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
-		<script type="text/javascript" src="app.js"></script>
+		<h1>Elm-Life</h1>
+		<em>
+			<a href="https://en.wikipedia.org/wiki/Conway's_Game_of_Life">Conway's Game of Life</a>
+			in
+			<a href="http://elm-lang.org/">Elm</a>
+		</em>
 
+		<div id="app"></div>
+
+		<script type="text/javascript" src="app.js"></script>
 		<script type="text/javascript">
-			Elm.Main.fullscreen();
+			Elm.Main.embed(document.getElementById('app'));
 		</script>
 	</body>
 </html>

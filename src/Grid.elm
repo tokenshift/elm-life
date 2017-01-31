@@ -1,21 +1,20 @@
 module Grid exposing (..)
 
-import Dict exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Set exposing (..)
 
 type CellState = Alive | Dead
-
 type alias Point2 = (Int, Int)
 
-type alias Model = { rows : Int, cols : Int, cells : Dict Point2 CellState, running : Bool }
+type alias Model = { rows : Int, cols : Int, living : Set Point2, running : Bool }
 
 init : Int -> Int -> Model
 init rows cols =
     { rows = rows
     , cols = cols
-    , cells = Dict.empty
+    , living = Set.empty
     , running = False }
 
 state : Point2 -> Model -> CellState
@@ -24,20 +23,17 @@ state (x, y) model =
         x1 = x % model.cols
         y1 = y % model.cols
     in
-        case Dict.get (x1, y1) model.cells of
-            Just val -> val
-            Nothing -> Dead
-
-toggle1 : Maybe CellState -> Maybe CellState
-toggle1 cell =
-    case cell of
-        Nothing -> Just Alive
-        Just Alive -> Nothing
-        Just Dead -> Just Alive
+       if Set.member (x1, y1) model.living
+          then Alive
+          else Dead
 
 toggle : Point2 -> Model -> Model
 toggle xy model =
-    { model | cells = Dict.update xy toggle1 model.cells }
+    case state xy model of
+        Alive ->
+            { model | living = Set.remove xy model.living }
+        Dead ->
+            { model | living = Set.insert xy model.living }
 
 neighbors : Point2 -> Model -> Int
 neighbors (row, col) model =
@@ -72,13 +68,9 @@ iterate model =
         coords = List.concatMap (\x -> List.map (\y -> (x,y)) ys) xs
 
         newState1 = \xy -> newState (state xy model) (neighbors xy model)
-        insertNewState = \xy cells -> Dict.insert xy (newState1 xy) cells
-        cells = coords |> List.foldl insertNewState Dict.empty
+        living = coords |> List.filter (\xy -> newState1 xy == Alive)
     in
-        { model | cells = cells }
-
-reset model =
-    { model | cells = Dict.empty }
+        { model | living = Set.fromList living }
 
 type Msg
     = ToggleCell Point2
@@ -94,7 +86,7 @@ update msg model =
         ToggleCell xy -> toggle xy model
         Iterate -> iterate model
         MaybeIterate -> if model.running then iterate model else model
-        Reset -> { model | cells = Dict.empty, running = False }
+        Reset -> { model | living = Set.empty, running = False }
         Play -> { model | running = True }
         Pause -> { model | running = False }
 
