@@ -2,6 +2,7 @@ module App exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Time exposing (second, millisecond)
 
 import Grid exposing (init)
 import Settings exposing (init, update, view)
@@ -10,20 +11,20 @@ type Model
     = Setup Settings.State
     | Ready Grid.Model
 
-init : Model
-init = Setup Settings.init
+init : (Model, Cmd Msg)
+init = (Setup Settings.init, Cmd.none)
 
 type Msg
     = SetupMsg Settings.Msg
     | ReadyMsg Grid.Msg
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg state =
     case state of
         Setup state ->
-            updateSetup msg state
+            (updateSetup msg state, Cmd.none)
         Ready state ->
-            updateReady msg state
+            (updateReady msg state, Cmd.none)
 
 updateSetup : Msg -> Settings.State -> Model
 updateSetup msg state =
@@ -55,3 +56,7 @@ view model =
                   Html.map (\msg -> ReadyMsg msg) <| Grid.view state
         , pre [ class "debug" ] [ model |> toString |> text ]
         ]
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every (100 * millisecond) (\_ -> ReadyMsg Grid.MaybeIterate)

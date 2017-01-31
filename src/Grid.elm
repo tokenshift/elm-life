@@ -9,19 +9,24 @@ type CellState = Alive | Dead
 
 type alias Point2 = (Int, Int)
 
-type alias Model = { rows : Int, cols : Int, cells : Dict Point2 CellState }
+type alias Model = { rows : Int, cols : Int, cells : Dict Point2 CellState, running : Bool }
 
 init : Int -> Int -> Model
 init rows cols =
     { rows = rows
     , cols = cols
-    , cells = Dict.empty }
+    , cells = Dict.empty
+    , running = False }
 
 state : Point2 -> Model -> CellState
-state xy model =
-    case Dict.get xy model.cells of
-        Just val -> val
-        Nothing -> Dead
+state (x, y) model =
+    let
+        x1 = x % model.cols
+        y1 = y % model.cols
+    in
+        case Dict.get (x1, y1) model.cells of
+            Just val -> val
+            Nothing -> Dead
 
 toggle1 : Maybe CellState -> Maybe CellState
 toggle1 cell =
@@ -62,8 +67,8 @@ newState oldState neighbors =
 iterate : Model -> Model
 iterate model =
     let
-        xs = List.range 1 model.rows
-        ys = List.range 1 model.cols
+        xs = List.range 0 (model.rows - 1)
+        ys = List.range 0 (model.cols - 1)
         coords = List.concatMap (\x -> List.map (\y -> (x,y)) ys) xs
 
         newState1 = \xy -> newState (state xy model) (neighbors xy model)
@@ -78,28 +83,38 @@ reset model =
 type Msg
     = ToggleCell Point2
     | Iterate
+    | MaybeIterate
     | Reset
+    | Play
+    | Pause
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         ToggleCell xy -> toggle xy model
         Iterate -> iterate model
-        Reset -> reset model
+        MaybeIterate -> if model.running then iterate model else model
+        Reset -> { model | cells = Dict.empty, running = False }
+        Play -> { model | running = True }
+        Pause -> { model | running = False }
 
 view : Model -> Html Msg
 view model =
     div [ class "grid" ]
-        [ table [] (List.map (viewRow model) <| List.range 1 model.rows)
+        [ table [] (List.map (viewRow model) <| List.range 0 (model.rows - 1))
         , button [ onClick Iterate ] [ text "Iterate" ]
         , button [ onClick Reset ] [ text "Reset" ]
+        , if model.running
+             then (button [ onClick Pause ] [ text "Pause" ])
+             else (button [ onClick Play ] [ text "Play" ])
         ]
 
 viewRow : Model -> Int -> Html Msg
 viewRow model row =
-    tr [] (List.map (viewCell model row) <| List.range 1 model.cols)
+    tr [] (List.map (viewCell model row) <| List.range 0 (model.cols - 1))
 
 viewCell : Model -> Int -> Int -> Html Msg
 viewCell model row col =
     let cell = state (row, col) model
     in td [ cell |> toString |> String.toLower |> class, onClick <| ToggleCell (row,col) ] []
+
